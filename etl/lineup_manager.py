@@ -212,6 +212,9 @@ def save_lineup(manager_id: int, game_date: date, active_player_ids: List[int]) 
             updated_lineups = pd.concat([all_lineups, new_lineup_df], ignore_index=True)
             data_loader.save_lineups(updated_lineups)
 
+            # Log transaction
+            _log_lineup_transaction(manager_id, game_date, active_player_ids)
+
             return True, f"Lineup saved for {game_date}"
 
         except Exception as e:
@@ -281,3 +284,43 @@ def get_active_players_for_scoring(manager_id: int, game_date: date) -> List[int
         return roster.sort_values('player_id')['player_id'].head(ACTIVE_PLAYERS_PER_DAY).tolist()
 
     return []
+
+
+def _log_lineup_transaction(manager_id: int, game_date: date, active_player_ids: List[int]) -> None:
+    """
+    Log a lineup transaction to transaction history.
+
+    Args:
+        manager_id: Manager ID
+        game_date: Date of the lineup
+        active_player_ids: List of active player IDs
+    """
+    try:
+        transactions = data_loader.load_transaction_log()
+
+        if transactions is None:
+            transactions = pd.DataFrame()
+
+        # Get player names for readability
+        players = data_loader.load_players()
+        active_names = []
+        for pid in active_player_ids:
+            player = players[players['player_id'] == pid]
+            if not player.empty:
+                active_names.append(player['player_name'].iloc[0])
+
+        new_transaction = pd.DataFrame([{
+            'timestamp': datetime.now().isoformat(),
+            'manager_id': manager_id,
+            'game_date': game_date,
+            'transaction_type': 'lineup_change',
+            'active_players': ', '.join(active_names),
+            'active_player_ids': ', '.join(map(str, active_player_ids))
+        }])
+
+        updated_transactions = pd.concat([transactions, new_transaction], ignore_index=True)
+        data_loader.save_transaction_log(updated_transactions)
+
+    except Exception as e:
+        # Don't fail lineup save if logging fails
+        print(f"Warning: Failed to log transaction: {e}")
