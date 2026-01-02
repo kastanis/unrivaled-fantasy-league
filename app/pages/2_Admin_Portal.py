@@ -37,11 +37,14 @@ with tab1:
             # Clear draft files
             draft_file = Path(__file__).parent.parent.parent / "data/processed/draft_results.csv"
             roster_file = Path(__file__).parent.parent.parent / "data/processed/rosters.csv"
+            temp_file = Path(__file__).parent.parent.parent / "data/processed/draft_temp.json"
 
             if draft_file.exists():
                 os.remove(draft_file)
             if roster_file.exists():
                 os.remove(roster_file)
+            if temp_file.exists():
+                os.remove(temp_file)
 
             st.success("Draft cleared! Refresh to start new draft.")
             st.rerun()
@@ -56,8 +59,22 @@ with tab1:
 
         # Initialize draft state
         if 'draft_picks' not in st.session_state:
-            st.session_state.draft_picks = []
-            st.session_state.draft_order = managers['manager_id'].tolist()
+            # Try to load from temp file (recover from interruption)
+            temp_file = Path(__file__).parent.parent.parent / "data/processed/draft_temp.json"
+            if temp_file.exists():
+                import json
+                try:
+                    with open(temp_file, 'r') as f:
+                        saved_draft = json.load(f)
+                        st.session_state.draft_picks = [tuple(pick) for pick in saved_draft['picks']]
+                        st.session_state.draft_order = saved_draft['order']
+                        st.info(f"📥 Recovered draft progress: {len(st.session_state.draft_picks)} picks")
+                except Exception:
+                    st.session_state.draft_picks = []
+                    st.session_state.draft_order = managers['manager_id'].tolist()
+            else:
+                st.session_state.draft_picks = []
+                st.session_state.draft_order = managers['manager_id'].tolist()
 
         # Show current draft order with randomize option
         current_pick_num = len(st.session_state.draft_picks) + 1
@@ -110,6 +127,16 @@ with tab1:
             if st.button("Make Pick"):
                 player_id = player_options[selected_player]
                 st.session_state.draft_picks.append((current_pick_num, player_id))
+
+                # Auto-save draft progress (recover from interruption)
+                import json
+                temp_file = Path(__file__).parent.parent.parent / "data/processed/draft_temp.json"
+                with open(temp_file, 'w') as f:
+                    json.dump({
+                        'picks': st.session_state.draft_picks,
+                        'order': st.session_state.draft_order
+                    }, f)
+
                 st.rerun()
 
             # Show draft progress
@@ -122,6 +149,12 @@ with tab1:
             if st.button("Save Draft Results"):
                 draft_df, rosters_df = draft_engine.execute_draft(st.session_state.draft_picks)
                 draft_engine.save_draft(draft_df, rosters_df)
+
+                # Delete temp file
+                temp_file = Path(__file__).parent.parent.parent / "data/processed/draft_temp.json"
+                if temp_file.exists():
+                    os.remove(temp_file)
+
                 st.success("Draft saved!")
                 st.session_state.draft_picks = []
                 st.rerun()
