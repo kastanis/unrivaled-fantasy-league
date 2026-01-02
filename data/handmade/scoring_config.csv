@@ -1,7 +1,5 @@
 stat_category,points_per_unit,description
-1PT_MADE,1.0,One-point field goals made
-2PT_MADE,2.5,Two-point field goals made
-FT_MADE,1.0,Free throws made
+PTS,1.0,Total points scored
 REB,1.2,Total rebounds
 AST,1.0,Assists
 STL,2.0,Steals

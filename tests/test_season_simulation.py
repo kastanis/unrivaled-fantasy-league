@@ -179,9 +179,7 @@ class TestSeasonSimulation:
             {
                 'game_id': 1,
                 'player_id': sample_players[0],
-                '1PT_MADE': 2,
-                '2PT_MADE': 5,
-                'FT_MADE': 3,
+                'PTS': 15,
                 'REB': 8,
                 'AST': 4,
                 'STL': 2,
@@ -194,9 +192,7 @@ class TestSeasonSimulation:
             {
                 'game_id': 1,
                 'player_id': sample_players[1],
-                '1PT_MADE': 1,
-                '2PT_MADE': 6,
-                'FT_MADE': 2,
+                'PTS': 15,
                 'REB': 5,
                 'AST': 3,
                 'STL': 1,
@@ -209,9 +205,7 @@ class TestSeasonSimulation:
             {
                 'game_id': 1,
                 'player_id': sample_players[2],
-                '1PT_MADE': 0,
-                '2PT_MADE': 4,
-                'FT_MADE': 1,
+                'PTS': 9,
                 'REB': 6,
                 'AST': 2,
                 'STL': 0,
@@ -236,9 +230,7 @@ class TestSeasonSimulation:
         # Verify scoring formula (spot check first player)
         first_player_stats = game_stats.iloc[0]
         expected_score = (
-            first_player_stats['1PT_MADE'] * 1.0 +
-            first_player_stats['2PT_MADE'] * 2.5 +
-            first_player_stats['FT_MADE'] * 1.0 +
+            first_player_stats['PTS'] * 1.0 +
             first_player_stats['REB'] * 1.2 +
             first_player_stats['AST'] * 1.0 +
             first_player_stats['STL'] * 2.0 +
@@ -420,9 +412,7 @@ class TestSeasonSimulation:
                 game_stats.append({
                     'game_id': i + 1,
                     'player_id': player_id,
-                    '1PT_MADE': j,
-                    '2PT_MADE': 5 + j,
-                    'FT_MADE': 2,
+                    'PTS': 12 + (3 * j),  # Varies from 12 to 27
                     'REB': 6 + j,
                     'AST': 3,
                     'STL': 1,

@@ -332,7 +332,7 @@ def validate_game_stats(df: pd.DataFrame) -> tuple[bool, str]:
     Returns:
         (is_valid, error_message)
     """
-    required_cols = ['game_id', 'player_id', '1PT_MADE', '2PT_MADE', 'FT_MADE',
+    required_cols = ['game_id', 'player_id', 'PTS',
                      'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'GAME_WINNER', 'DUNK']
 
     # Check columns exist
@@ -347,7 +347,7 @@ def validate_game_stats(df: pd.DataFrame) -> tuple[bool, str]:
         return False, f"Invalid player IDs: {invalid['player_id'].unique()}"
 
     # Check no negative stats (except TOV which can be negative in scoring)
-    for col in ['1PT_MADE', '2PT_MADE', 'FT_MADE', 'REB', 'AST', 'STL', 'BLK', 'PF', 'DUNK']:
+    for col in ['PTS', 'REB', 'AST', 'STL', 'BLK', 'PF', 'DUNK']:
         if (df[col] < 0).any():
             return False, f"Negative values found in {col}"
 
