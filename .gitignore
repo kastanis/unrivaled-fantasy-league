@@ -31,3 +31,10 @@ __pycache__/
 
 # Don't ignore data files - we want them tracked for Streamlit Cloud deployment
 managers_REAL.csv
+
+# Internal/development files (not for public template)
+ISSUES_AND_AUTOMATION.md
+PRE_LAUNCH_CHECKLIST.md
+TEST_DATA_README.md
+player_id_lookup.txt
+sample_real_game_stats.csv
