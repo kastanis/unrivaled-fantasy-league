@@ -96,8 +96,7 @@ After each game or game day:
 
 1. Go to **Admin Portal** → "Upload Stats" tab
 2. Prepare a CSV file with these columns:
-   - `game_id`, `player_id`, `1PT_MADE`, `2PT_MADE`, `FT_MADE`
-   - `REB`, `AST`, `STL`, `BLK`, `TOV`, `PF`
+   - `game_id`, `player_id`, `PTS`, `REB`, `AST`, `STL`, `BLK`, `TOV`, `PF`
    - `GAME_WINNER` (1 or 0), `DUNK` (count)
 3. Upload the CSV
 4. Select game date and game number
