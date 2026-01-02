@@ -185,3 +185,13 @@ def save_game_stats(df: pd.DataFrame, game_date: date, game_num: int) -> None:
     """Save game stats to source directory."""
     filename = f"{game_date}_game{game_num}.csv"
     save_csv(df, GAME_STATS_DIR / filename)
+
+
+def load_transaction_log() -> Optional[pd.DataFrame]:
+    """Load transaction history log."""
+    return load_csv(PROCESSED_DIR / "transaction_log.csv")
+
+
+def save_transaction_log(df: pd.DataFrame) -> None:
+    """Save transaction history log."""
+    save_csv(df, PROCESSED_DIR / "transaction_log.csv")

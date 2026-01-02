@@ -7,7 +7,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from etl import data_loader, standings_updater
+from etl import data_loader, standings_updater, weekly_recap
 from etl.config import NUM_MANAGERS, NUM_PLAYERS
 
 # Page config
@@ -84,6 +84,47 @@ with col3:
         games_count = 0
 
     st.metric("Games Played", games_count)
+
+# Weekly Recap
+st.divider()
+st.subheader("Recent Game Highlights")
+
+try:
+    recaps = weekly_recap.get_recent_recaps(num_days=3)
+
+    if recaps:
+        for recap in recaps:
+            game_date = recap['game_date']
+
+            with st.expander(f"📅 {game_date.strftime('%B %d, %Y')}", expanded=len(recaps) == 1):
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.markdown("**🏆 Top Scorer**")
+                    if recap['top_scorer']:
+                        st.write(f"{recap['top_scorer']['player_name']}")
+                        st.caption(f"{recap['top_scorer']['team']}")
+                        st.metric("Points", f"{recap['top_scorer']['fantasy_points']:.1f}")
+
+                with col2:
+                    st.markdown("**⭐ Manager of the Day**")
+                    if recap['manager_of_day']:
+                        st.write(f"{recap['manager_of_day']['manager_name']}")
+                        st.caption(f"{recap['manager_of_day']['team_name']}")
+                        st.metric("Points", f"{recap['manager_of_day']['total_points']:.1f}")
+
+                with col3:
+                    st.markdown("**😅 Biggest Bench Mistake**")
+                    if recap['biggest_bench_mistake']:
+                        st.write(f"{recap['biggest_bench_mistake']['manager_name']}")
+                        st.caption(f"Benched: {recap['biggest_bench_mistake']['player_name']}")
+                        st.metric("Missed Points", f"{recap['biggest_bench_mistake']['fantasy_points']:.1f}")
+                    else:
+                        st.info("No bench mistakes!")
+    else:
+        st.info("Game highlights will appear here after games are played!")
+except Exception as e:
+    st.info("Game highlights will appear after the first games are played.")
 
 # How it works
 st.divider()

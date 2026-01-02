@@ -9,7 +9,7 @@ import pandas as pd
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from etl import data_loader, draft_engine, lineup_manager, standings_updater, score_calculator
+from etl import data_loader, draft_engine, lineup_manager, standings_updater, score_calculator, player_stats
 from etl.config import SEASON_START, SEASON_END, ACTIVE_PLAYERS_PER_DAY
 
 st.set_page_config(page_title="Manager Portal", page_icon="👤", layout="wide")
@@ -54,7 +54,7 @@ if selected_option != "-- Select Manager --":
         st.stop()
 
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["My Roster", "Set Lineup", "My Scores", "Standings"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["My Roster", "Set Lineup", "My Scores", "Standings", "Player Stats", "Transaction Log"])
 
     with tab1:
         st.header("My Roster")
@@ -275,6 +275,136 @@ if selected_option != "-- Select Manager --":
                 st.info(f"Your Current Rank: #{my_rank}")
         else:
             st.info("Standings not available yet.")
+
+    with tab5:
+        st.header("Player Stats Dashboard")
+
+        # Get all player stats
+        all_stats = player_stats.get_all_player_stats()
+
+        if not all_stats.empty:
+            # Show my roster players first
+            roster = draft_engine.get_manager_roster(manager_id)
+            my_player_ids = roster['player_id'].tolist() if not roster.empty else []
+
+            # Filter to my players
+            my_players = all_stats[all_stats['player_id'].isin(my_player_ids)]
+
+            if not my_players.empty:
+                st.subheader("Your Roster Performance")
+
+                # Add trend emoji
+                my_players['trend_emoji'] = my_players['trend'].map({
+                    'hot': '🔥',
+                    'cold': '🧊',
+                    'neutral': '-'
+                })
+
+                display_my = my_players[[
+                    'player_name', 'team', 'games_played',
+                    'season_avg', 'last_5_avg', 'total_points', 'trend_emoji'
+                ]].copy()
+
+                display_my.columns = [
+                    'Player', 'Team', 'GP',
+                    'Season Avg', 'Last 5 Avg', 'Total Pts', 'Trend'
+                ]
+
+                st.dataframe(
+                    display_my,
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+            st.divider()
+            st.subheader("All Players")
+
+            # Add trend emoji
+            all_stats['trend_emoji'] = all_stats['trend'].map({
+                'hot': '🔥',
+                'cold': '🧊',
+                'neutral': '-'
+            })
+
+            display_all = all_stats[[
+                'player_name', 'team', 'games_played',
+                'season_avg', 'last_5_avg', 'total_points', 'trend_emoji'
+            ]].copy()
+
+            display_all.columns = [
+                'Player', 'Team', 'GP',
+                'Season Avg', 'Last 5 Avg', 'Total Pts', 'Trend'
+            ]
+
+            st.dataframe(
+                display_all,
+                hide_index=True,
+                use_container_width=True
+            )
+        else:
+            st.info("No player stats available yet. Stats will appear after game data is uploaded.")
+
+    with tab6:
+        st.header("Transaction Log")
+
+        # Load transaction log
+        transactions = data_loader.load_transaction_log()
+
+        if transactions is not None and not transactions.empty:
+            # Filter to this manager's transactions
+            my_transactions = transactions[transactions['manager_id'] == manager_id]
+
+            if not my_transactions.empty:
+                # Sort by timestamp descending
+                my_transactions = my_transactions.sort_values('timestamp', ascending=False)
+
+                st.subheader("Your Recent Lineup Changes")
+
+                # Display transaction log
+                display_transactions = my_transactions[[
+                    'timestamp', 'game_date', 'active_players'
+                ]].copy()
+
+                display_transactions.columns = ['Timestamp', 'Game Date', 'Active Players']
+
+                # Format timestamp
+                display_transactions['Timestamp'] = pd.to_datetime(display_transactions['Timestamp']).dt.strftime('%Y-%m-%d %H:%M')
+
+                st.dataframe(
+                    display_transactions,
+                    hide_index=True,
+                    use_container_width=True
+                )
+            else:
+                st.info("No lineup changes recorded yet.")
+
+            # Show all transactions (optional)
+            if st.checkbox("Show all managers' transactions"):
+                st.subheader("All Lineup Changes")
+
+                # Merge with manager names
+                all_trans_display = transactions.merge(
+                    managers[['manager_id', 'team_name']],
+                    on='manager_id',
+                    how='left'
+                )
+
+                all_trans_display = all_trans_display.sort_values('timestamp', ascending=False)
+
+                display_all_trans = all_trans_display[[
+                    'timestamp', 'team_name', 'game_date', 'active_players'
+                ]].copy()
+
+                display_all_trans.columns = ['Timestamp', 'Team', 'Game Date', 'Active Players']
+                display_all_trans['Timestamp'] = pd.to_datetime(display_all_trans['Timestamp']).dt.strftime('%Y-%m-%d %H:%M')
+
+                st.dataframe(
+                    display_all_trans,
+                    hide_index=True,
+                    use_container_width=True
+                )
+        else:
+            st.info("No transactions recorded yet.")
 
 else:
     st.info("Please select your manager from the dropdown above.")
