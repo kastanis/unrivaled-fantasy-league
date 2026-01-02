@@ -144,6 +144,7 @@ def get_manager_lineup(manager_id: int, game_date: date) -> pd.DataFrame:
 def save_lineup(manager_id: int, game_date: date, active_player_ids: List[int]) -> tuple[bool, str]:
     """
     Save a manager's lineup for a date.
+    Uses retry logic to handle concurrent edits.
 
     Args:
         manager_id: Manager setting lineup
@@ -162,49 +163,67 @@ def save_lineup(manager_id: int, game_date: date, active_player_ids: List[int]) 
     if not is_valid:
         return False, error_msg
 
-    # Get manager's full roster
-    rosters = data_loader.load_rosters()
+    # Retry logic to handle concurrent edits
+    import time
+    import random
+    max_retries = 3
 
-    if rosters is None or rosters.empty:
-        return False, "No rosters found - complete draft first"
+    for attempt in range(max_retries):
+        try:
+            # Get manager's full roster
+            rosters = data_loader.load_rosters()
 
-    manager_roster = rosters[rosters['manager_id'] == manager_id]
-    roster_player_ids = manager_roster['player_id'].tolist()
+            if rosters is None or rosters.empty:
+                return False, "No rosters found - complete draft first"
 
-    # Load existing lineups
-    all_lineups = data_loader.load_lineups()
+            manager_roster = rosters[rosters['manager_id'] == manager_id]
+            roster_player_ids = manager_roster['player_id'].tolist()
 
-    if all_lineups is None or all_lineups.empty:
-        all_lineups = pd.DataFrame()
-    else:
-        # Remove this manager's lineup for this date (only if data exists)
-        all_lineups = all_lineups[
-            ~((all_lineups['manager_id'] == manager_id) &
-              (all_lineups['game_date'] == game_date))
-        ]
+            # Load existing lineups
+            all_lineups = data_loader.load_lineups()
 
-    # Build new lineup entries
-    new_lineup_entries = []
-    lineup_id_start = all_lineups['lineup_id'].max() + 1 if not all_lineups.empty else 1
+            if all_lineups is None or all_lineups.empty:
+                all_lineups = pd.DataFrame()
+            else:
+                # Remove this manager's lineup for this date (only if data exists)
+                all_lineups = all_lineups[
+                    ~((all_lineups['manager_id'] == manager_id) &
+                      (all_lineups['game_date'] == game_date))
+                ]
 
-    for i, player_id in enumerate(roster_player_ids):
-        status = 'active' if player_id in active_player_ids else 'bench'
-        new_lineup_entries.append({
-            'lineup_id': lineup_id_start + i,
-            'manager_id': manager_id,
-            'game_date': game_date,
-            'player_id': player_id,
-            'status': status,
-            'locked_at': datetime.now().isoformat()
-        })
+            # Build new lineup entries
+            new_lineup_entries = []
+            lineup_id_start = all_lineups['lineup_id'].max() + 1 if not all_lineups.empty else 1
 
-    new_lineup_df = pd.DataFrame(new_lineup_entries)
+            for i, player_id in enumerate(roster_player_ids):
+                status = 'active' if player_id in active_player_ids else 'bench'
+                new_lineup_entries.append({
+                    'lineup_id': lineup_id_start + i,
+                    'manager_id': manager_id,
+                    'game_date': game_date,
+                    'player_id': player_id,
+                    'status': status,
+                    'locked_at': datetime.now().isoformat()
+                })
 
-    # Combine and save
-    updated_lineups = pd.concat([all_lineups, new_lineup_df], ignore_index=True)
-    data_loader.save_lineups(updated_lineups)
+            new_lineup_df = pd.DataFrame(new_lineup_entries)
 
-    return True, f"Lineup saved for {game_date}"
+            # Combine and save
+            updated_lineups = pd.concat([all_lineups, new_lineup_df], ignore_index=True)
+            data_loader.save_lineups(updated_lineups)
+
+            return True, f"Lineup saved for {game_date}"
+
+        except Exception as e:
+            if attempt < max_retries - 1:
+                # Wait a random short time before retry (50-150ms)
+                time.sleep(random.uniform(0.05, 0.15))
+                continue
+            else:
+                # Final attempt failed
+                return False, f"Failed to save lineup after {max_retries} attempts: {str(e)}"
+
+    return False, "Failed to save lineup"
 
 
 def get_active_players_for_scoring(manager_id: int, game_date: date) -> List[int]:
