@@ -113,6 +113,10 @@ with tab1:
             drafted_ids = [pid for _, pid in st.session_state.draft_picks]
             available = players[~players['player_id'].isin(drafted_ids)]
 
+            # Filter out injured players
+            if 'status' in available.columns:
+                available = available[available['status'] != 'injured']
+
             # Player selection
             player_options = {
                 f"{row['player_name']} ({row['team']})": row['player_id']
