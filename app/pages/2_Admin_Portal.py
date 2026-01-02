@@ -191,7 +191,7 @@ with tab2:
 
             if st.button("Save Stats and Calculate Scores"):
                 # Validate required columns
-                required_cols = ['game_id', 'player_id', '1PT_MADE', '2PT_MADE', 'FT_MADE',
+                required_cols = ['game_id', 'player_id', 'PTS',
                                  'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'GAME_WINNER', 'DUNK']
                 missing_cols = [col for col in required_cols if col not in df.columns]
 
@@ -209,7 +209,7 @@ with tab2:
                         st.info("Player IDs must be between 1-48. Check data/handmade/players.csv")
                     else:
                         # Validate no negative stats (except TOV which has negative scoring)
-                        stat_cols = ['1PT_MADE', '2PT_MADE', 'FT_MADE', 'REB', 'AST', 'STL', 'BLK', 'PF', 'DUNK']
+                        stat_cols = ['PTS', 'REB', 'AST', 'STL', 'BLK', 'PF', 'DUNK']
                         for col in stat_cols:
                             if (df[col] < 0).any():
                                 st.warning(f"⚠️ Warning: Negative values found in {col} column")
@@ -239,9 +239,7 @@ with tab2:
     Your CSV must have these columns:
     - `game_id` - Unique game identifier
     - `player_id` - Player ID (1-48)
-    - `1PT_MADE` - One-point field goals made
-    - `2PT_MADE` - Two-point field goals made
-    - `FT_MADE` - Free throws made
+    - `PTS` - Total points scored
     - `REB` - Total rebounds
     - `AST` - Assists
     - `STL` - Steals
@@ -258,9 +256,7 @@ with tab2:
     example_df = pd.DataFrame([{
         'game_id': 1,
         'player_id': 43,
-        '1PT_MADE': 2,
-        '2PT_MADE': 6,
-        'FT_MADE': 3,
+        'PTS': 19,
         'REB': 8,
         'AST': 4,
         'STL': 2,

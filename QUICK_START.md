@@ -22,7 +22,7 @@ This document summarizes what's done and what you need to do before launching.
 ### Data
 - ✅ All 48 Unrivaled Season 2 players
 - ✅ 56 regular season games scheduled (Jan 5 - Feb 27, 2026)
-- ✅ Scoring system configured (1PT=1, 2PT=2.5, FT=1, REB=1.2, AST=1, STL=2, BLK=2, TOV=-1, PF=-0.5, Game Winner=1.5, Dunk=0.5)
+- ✅ Scoring system configured (PTS=1.0, REB=1.2, AST=1, STL=2, BLK=2, TOV=-1, PF=-0.5, Game Winner=1.5, Dunk=0.5)
 - ✅ Injury support (mark players as injured with 🔴 indicator)
 
 ### Documentation
@@ -200,9 +200,9 @@ git push -u origin main
 When uploading stats, your CSV must have these columns:
 
 ```csv
-game_id,player_id,1PT_MADE,2PT_MADE,FT_MADE,REB,AST,STL,BLK,TOV,PF,GAME_WINNER,DUNK
-1,43,2,6,3,8,4,2,1,2,2,0,1
-1,12,1,4,2,5,3,1,0,1,1,1,0
+game_id,player_id,PTS,REB,AST,STL,BLK,TOV,PF,GAME_WINNER,DUNK
+1,43,21,8,4,2,1,2,2,0,1
+1,12,15,5,3,1,0,1,1,1,0
 ...
 ```
 

@@ -4,11 +4,9 @@
 
 ### From Unrivaled Box Score → Your CSV Format
 
-| Unrivaled Column | How to Get Your CSV Value | Example |
-|-----------------|---------------------------|---------|
-| **3PT** (e.g., 1-5) | **1PT_MADE** = first number | 1 |
-| **FG** (e.g., 10-21) | **2PT_MADE** = FG made - 3PT made | 10 - 1 = 9 |
-| **FT** (e.g., 0-0) | **FT_MADE** = first number | 0 |
+| Unrivaled Column | Your CSV Column | Example |
+|-----------------|-----------------|---------|
+| **PTS** | **PTS** = same value | 21 |
 | **REB** | **REB** = same value | 9 |
 | **AST** | **AST** = same value | 1 |
 | **STL** | **STL** = same value | 1 |
@@ -22,18 +20,12 @@
 
 ### Example: Kahleah Copper's Line
 **Box Score Shows:**
-- MIN: 14
-- FG: **10-21** (10 made, 21 attempted)
-- 3PT: **1-5** (1 made, 5 attempted)
-- FT: **0-0** (0 made, 0 attempted)
-- REB: 9, AST: 1, STL: 1, BLK: 0, TO: 3, PF: 3
 - PTS: 21
+- REB: 9, AST: 1, STL: 1, BLK: 0, TO: 3, PF: 3
 
 **Your CSV Entry:**
 ```
-1PT_MADE = 1       (from 3PT: 1-5)
-2PT_MADE = 9       (FG made - 3PT made = 10 - 1)
-FT_MADE = 0        (from FT: 0-0)
+PTS = 21
 REB = 9
 AST = 1
 STL = 1
@@ -73,48 +65,36 @@ Most games will have 0-3 total dunks across all players.
 
 ## Common Mistakes to Avoid
 
-❌ **Wrong:** Using 3PT attempts instead of 3PT made
+❌ **Wrong:** Mixing up TOV (turnovers) and TO column name
 ```
-3PT: 1-5  →  1PT_MADE = 5  ❌ NO!
-```
-
-✅ **Right:** Use the FIRST number (made shots)
-```
-3PT: 1-5  →  1PT_MADE = 1  ✓ YES!
+Box score shows TO: 3  →  TO = 3  ❌ NO!
 ```
 
-❌ **Wrong:** Using total FG for 2PT_MADE
+✅ **Right:** Use TOV as the column name
 ```
-FG: 10-21  →  2PT_MADE = 10  ❌ NO!
-```
-
-✅ **Right:** Subtract 3PT made from FG made
-```
-FG: 10-21, 3PT: 1-5  →  2PT_MADE = 10 - 1 = 9  ✓ YES!
+Box score shows TO: 3  →  TOV = 3  ✓ YES!
 ```
 
 ## Template CSV
 
 ```csv
-game_id,player_id,1PT_MADE,2PT_MADE,FT_MADE,REB,AST,STL,BLK,TOV,PF,GAME_WINNER,DUNK
-1,5,1,9,0,9,1,1,0,3,3,0,0
+game_id,player_id,PTS,REB,AST,STL,BLK,TOV,PF,GAME_WINNER,DUNK
+1,5,21,9,1,1,0,3,3,0,0
 ```
 
 ## Time-Saving Tips
 
-1. **Copy box score to spreadsheet** - Makes calculations easier
-2. **Use Excel formula** for 2PT_MADE: `=FG_MADE - 3PT_MADE`
+1. **Copy box score to spreadsheet** - Makes entry faster
+2. **Use Excel template** - See [EXCEL_CONVERSION_SETUP.md](EXCEL_CONVERSION_SETUP.md)
 3. **Batch process** - Do all players from one team, then the other
-4. **Double-check totals** - Your points should match the box score
-   - Fantasy Points ≠ Game Points (your scoring is different)
-   - But verify player game points: `1PT×1 + 2PT×2 + FT×1 = PTS`
+4. **Double-check totals** - Your PTS should match the box score
 
 ## Verification
 
 After creating CSV, verify one player manually:
 
 **Kahleah Copper:**
-- Game Points: 1PT×1 + 2PT×2 + FT×1 = 1 + 18 + 0 = **21** ✓
-- Fantasy Points: 1×1 + 9×2.5 + 0×1 + 9×1.2 + 1×1 + 1×2 + 0×2 + 3×(-1) + 3×(-0.5) = **29.8 pts**
+- Game Points (from box score): **21** ✓
+- Fantasy Points: 21×1.0 + 9×1.2 + 1×1.0 + 1×2.0 + 0×2.0 + 3×(-1.0) + 3×(-0.5) = **29.8 pts**
 
-Game points should match box score (21 = 21 ✓)
+Game points in your CSV should match box score (21 = 21 ✓)

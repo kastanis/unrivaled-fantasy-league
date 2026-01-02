@@ -17,9 +17,7 @@ A Streamlit-based fantasy basketball league system for Unrivaled Season 2 (Jan 5
 
 ## Scoring System
 
-- 1PT Made = 1.0 points
-- 2PT Made = 2.5 points
-- FT Made = 1.0 points
+- Points Scored (PTS) = 1.0 points
 - Rebound = 1.2 points
 - Assist = 1.0 points
 - Steal = 2.0 points
