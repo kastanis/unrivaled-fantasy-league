@@ -106,9 +106,17 @@ def load_player_game_scores() -> Optional[pd.DataFrame]:
     """Load calculated player fantasy points per game."""
     path = PROCESSED_DIR / "player_game_scores.csv"
     if path.exists():
-        df = pd.read_csv(path)
-        df['game_date'] = pd.to_datetime(df['game_date']).dt.date
-        return df
+        # Check if file is empty
+        if path.stat().st_size == 0:
+            return None
+        try:
+            df = pd.read_csv(path)
+            if df.empty:
+                return None
+            df['game_date'] = pd.to_datetime(df['game_date']).dt.date
+            return df
+        except Exception:
+            return None
     return None
 
 
@@ -138,6 +146,20 @@ def load_tournament_picks() -> Optional[pd.DataFrame]:
     if path.exists():
         return pd.read_csv(path)
     return None
+
+
+def load_csv(file_path: Path) -> Optional[pd.DataFrame]:
+    """Load CSV file with error handling for missing/empty files."""
+    if not file_path.exists():
+        return None
+
+    try:
+        # Check if file is empty
+        if file_path.stat().st_size == 0:
+            return None
+        return pd.read_csv(file_path)
+    except Exception:
+        return None
 
 
 def save_csv(df: pd.DataFrame, file_path: Path, index: bool = False) -> None:

@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from etl import data_loader, draft_engine, lineup_manager, standings_updater, score_calculator, player_stats
 from etl.config import SEASON_START, SEASON_END, ACTIVE_PLAYERS_PER_DAY
 
-st.set_page_config(page_title="Manager Portal", page_icon="👤", layout="wide")
+st.set_page_config(page_title="Manager Portal", page_icon="👤")
 
 st.title("👤 Manager Portal")
 
@@ -88,7 +88,7 @@ if selected_option != "-- Select Manager --":
         if is_locked:
             st.error(f"🔒 Lineups are locked for {lineup_date}")
             lock_time = lineup_manager.get_lineup_lock_time(lineup_date)
-            st.caption(f"Locked at: {lock_time.strftime('%I:%M %p')}")
+            st.caption(f"Locked at: {lock_time.strftime('%I:%M %p')} ET")
         else:
             time_until = lineup_manager.get_time_until_lock(lineup_date)
             if time_until:
@@ -110,7 +110,7 @@ if selected_option != "-- Select Manager --":
                 with col1:
                     st.write(f"**{game['away_team']}**")
                 with col2:
-                    st.write(f"@ {game_time}")
+                    st.write(f"@ {game_time} ET")
                 with col3:
                     st.write(f"**{game['home_team']}**")
 
