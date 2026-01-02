@@ -14,7 +14,6 @@ from etl.config import NUM_MANAGERS, NUM_PLAYERS
 st.set_page_config(
     page_title="Unrivaled Fantasy League",
     page_icon="🏀",
-    layout="wide",
     initial_sidebar_state="expanded"
 )
 

@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from etl import data_loader, draft_engine, standings_updater
 
-st.set_page_config(page_title="Tournament", page_icon="🏆", layout="wide")
+st.set_page_config(page_title="Tournament", page_icon="🏆")
 
 st.title("🏆 1-on-1 Tournament")
 
@@ -21,8 +21,6 @@ st.markdown("""
 - Single elimination bracket
 - **Head-to-head matchups:** Winner = player with most fantasy points in tournament round games
 - Uses same scoring as regular season (points, rebounds, assists, steals, blocks, etc.)
-
-*Note: Unrivaled 1-on-1 games track full stats, not just scoring - so fantasy points make sense!*
 """)
 
 st.divider()

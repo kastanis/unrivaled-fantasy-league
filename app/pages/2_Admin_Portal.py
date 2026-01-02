@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from etl import data_loader, draft_engine, score_calculator, standings_updater
 from etl.config import DRAFT_ROUNDS, TOTAL_DRAFT_PICKS
 
-st.set_page_config(page_title="Admin Portal", page_icon="⚙️", layout="wide")
+st.set_page_config(page_title="Admin Portal", page_icon="⚙️")
 
 st.title("⚙️ Admin Portal")
 
@@ -326,7 +326,7 @@ with tab4:
 with tab5:
     st.header("Injury Report")
 
-    st.info("Update player injury status here. Injured players cannot be drafted or set in lineups.")
+    st.info("View player injury status. To update injury status, edit data/handmade/players.csv directly. Injured players cannot be drafted or set in lineups.")
 
     # Load players
     players = data_loader.load_players()
@@ -338,7 +338,7 @@ with tab5:
         injury_tab1, injury_tab2 = st.tabs(["All Players", "Currently Injured"])
 
         with injury_tab1:
-            st.subheader("All Players")
+            st.subheader("All Players Status")
 
             # Add search/filter
             search = st.text_input("🔍 Search player name:", "")
@@ -349,9 +349,9 @@ with tab5:
                     filtered_players['player_name'].str.contains(search, case=False, na=False)
                 ]
 
-            # Display players with status update option
+            # Display players (read-only)
             for idx, player in filtered_players.iterrows():
-                col1, col2, col3, col4 = st.columns([3, 2, 2, 2])
+                col1, col2, col3 = st.columns([4, 3, 3])
 
                 with col1:
                     st.write(f"**{player['player_name']}**")
@@ -364,22 +364,6 @@ with tab5:
                     status_emoji = "✅" if current_status == 'active' else "🔴"
                     st.write(f"{status_emoji} {current_status.title()}")
 
-                with col4:
-                    # Toggle button
-                    new_status = 'injured' if current_status == 'active' else 'active'
-                    button_label = f"Mark {new_status.title()}"
-
-                    if st.button(button_label, key=f"status_{player['player_id']}"):
-                        # Update player status
-                        players.loc[players['player_id'] == player['player_id'], 'status'] = new_status
-
-                        # Save updated players file
-                        players_file = Path(__file__).parent.parent.parent / "data/handmade/players.csv"
-                        players.to_csv(players_file, index=False)
-
-                        st.success(f"Updated {player['player_name']} to {new_status}")
-                        st.rerun()
-
         with injury_tab2:
             st.subheader("Currently Injured Players")
 
@@ -388,7 +372,15 @@ with tab5:
             if not injured.empty:
                 # Show which managers are affected
                 for _, player in injured.iterrows():
-                    with st.expander(f"🔴 {player['player_name']} ({player['team']})"):
+                    col1, col2, col3 = st.columns([4, 3, 3])
+
+                    with col1:
+                        st.write(f"**🔴 {player['player_name']}**")
+
+                    with col2:
+                        st.caption(player['team'])
+
+                    with col3:
                         # Check if player is on a roster
                         if rosters is not None:
                             player_roster = rosters[rosters['player_id'] == player['player_id']]
@@ -398,22 +390,11 @@ with tab5:
                                 manager = managers[managers['manager_id'] == manager_id]
 
                                 if not manager.empty:
-                                    st.warning(f"⚠️ Owned by: {manager['manager_name'].iloc[0]} ({manager['team_name'].iloc[0]})")
-                                    st.caption("This manager cannot use this player in lineups until marked active.")
+                                    st.caption(f"Owned by: {manager['team_name'].iloc[0]}")
                             else:
-                                st.info("Not currently on any roster")
+                                st.caption("Not drafted")
                         else:
-                            st.info("Draft not complete yet")
-
-                        # Quick recovery button
-                        if st.button("Mark as Active (Recovered)", key=f"recover_{player['player_id']}"):
-                            players.loc[players['player_id'] == player['player_id'], 'status'] = 'active'
-
-                            players_file = Path(__file__).parent.parent.parent / "data/handmade/players.csv"
-                            players.to_csv(players_file, index=False)
-
-                            st.success(f"{player['player_name']} marked as active!")
-                            st.rerun()
+                            st.caption("Draft incomplete")
             else:
                 st.success("✅ No injured players! Everyone is healthy.")
 
