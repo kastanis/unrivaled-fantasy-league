@@ -1,5 +1,7 @@
 # Unrivaled Fantasy Basketball League
 
+> 🎯 **This is a template!** Clone this repo to create your own Unrivaled fantasy league. All you need to do is customize `data/handmade/managers.csv` with your 8 league members and deploy!
+
 A Streamlit-based fantasy basketball league system for Unrivaled Season 2 (Jan 5 - Feb 27, 2026).
 
 ## Features
