@@ -1,2 +1,2 @@
-*
-!.gitignore
+# Allow all processed files to be committed for Streamlit Cloud persistence
+# (Previously these were ignored, but Streamlit Cloud has ephemeral filesystem)
