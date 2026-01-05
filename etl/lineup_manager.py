@@ -3,32 +3,39 @@
 import pandas as pd
 from datetime import datetime, date, time, timedelta
 from typing import List, Optional
+from zoneinfo import ZoneInfo
 from etl import data_loader
 from etl.config import ACTIVE_PLAYERS_PER_DAY
+
+# All game times in schedule are Eastern Time
+ET_TIMEZONE = ZoneInfo("America/New_York")
 
 
 def get_lineup_lock_time(game_date: date) -> Optional[datetime]:
     """
     Get the lineup lock time for a given date (first game of the day).
 
+    Game times in schedule are in ET. Returns timezone-aware datetime in ET.
+
     Args:
         game_date: Date to check
 
     Returns:
-        datetime when lineups lock, or None if no games scheduled
+        datetime when lineups lock (ET timezone), or None if no games scheduled
     """
     schedule = data_loader.load_game_schedule()
 
     games_today = schedule[schedule['game_date'] == game_date]
 
     if games_today.empty:
-        # No games scheduled, lock at end of day
-        return datetime.combine(game_date, time(23, 59, 59))
+        # No games scheduled, lock at end of day ET
+        return datetime.combine(game_date, time(23, 59, 59), tzinfo=ET_TIMEZONE)
 
-    # Find earliest game time
+    # Find earliest game time (stored in ET)
     first_game_time = games_today['game_time'].min()
 
-    return datetime.combine(game_date, first_game_time)
+    # Create timezone-aware datetime in ET
+    return datetime.combine(game_date, first_game_time, tzinfo=ET_TIMEZONE)
 
 
 def is_lineup_locked(game_date: date) -> bool:
@@ -50,7 +57,9 @@ def is_lineup_locked(game_date: date) -> bool:
     if lock_time is None:
         return False
 
-    return datetime.now() >= lock_time
+    # Compare using timezone-aware current time in ET
+    now_et = datetime.now(ET_TIMEZONE)
+    return now_et >= lock_time
 
 
 def get_time_until_lock(game_date: date) -> Optional[timedelta]:
@@ -71,7 +80,9 @@ def get_time_until_lock(game_date: date) -> Optional[timedelta]:
     if lock_time is None:
         return None
 
-    return lock_time - datetime.now()
+    # Calculate time difference using timezone-aware times
+    now_et = datetime.now(ET_TIMEZONE)
+    return lock_time - now_et
 
 
 def validate_lineup(manager_id: int, active_player_ids: List[int]) -> tuple[bool, str]:
@@ -284,6 +295,90 @@ def get_active_players_for_scoring(manager_id: int, game_date: date) -> List[int
         return roster.sort_values('player_id')['player_id'].head(ACTIVE_PLAYERS_PER_DAY).tolist()
 
     return []
+
+
+def auto_create_missing_lineups(game_date: date) -> int:
+    """
+    Auto-create default lineups for managers who have never set a lineup.
+
+    This is called before scoring to ensure all managers have a visible lineup.
+    Uses sticky lineup logic: only creates default if manager has NO previous lineups at all.
+
+    Args:
+        game_date: Date to create lineups for
+
+    Returns:
+        Number of default lineups created
+    """
+    from etl import draft_engine
+
+    managers = data_loader.load_managers()
+    all_lineups = data_loader.load_lineups()
+    rosters = data_loader.load_rosters()
+
+    if managers is None or managers.empty:
+        return 0
+
+    if rosters is None or rosters.empty:
+        return 0
+
+    created_count = 0
+
+    for _, manager in managers.iterrows():
+        manager_id = manager['manager_id']
+
+        # Check if manager has ANY lineup entries ever
+        has_any_lineup = False
+        if all_lineups is not None and not all_lineups.empty:
+            manager_lineups = all_lineups[all_lineups['manager_id'] == manager_id]
+            has_any_lineup = not manager_lineups.empty
+
+        # Only create default if they've never set a lineup
+        if not has_any_lineup:
+            # Get their roster and pick first 3 players by ID
+            roster = draft_engine.get_manager_roster(manager_id)
+
+            if roster.empty:
+                continue
+
+            active_player_ids = roster.sort_values('player_id')['player_id'].head(ACTIVE_PLAYERS_PER_DAY).tolist()
+
+            # Create lineup entries for all players on roster
+            manager_roster = rosters[rosters['manager_id'] == manager_id]
+            roster_player_ids = manager_roster['player_id'].tolist()
+
+            if not all_lineups or all_lineups.empty:
+                lineup_id_start = 1
+            else:
+                lineup_id_start = all_lineups['lineup_id'].max() + 1
+
+            new_lineup_entries = []
+            for i, player_id in enumerate(roster_player_ids):
+                status = 'active' if player_id in active_player_ids else 'bench'
+                new_lineup_entries.append({
+                    'lineup_id': lineup_id_start + i,
+                    'manager_id': manager_id,
+                    'game_date': game_date,
+                    'player_id': player_id,
+                    'status': status,
+                    'locked_at': 'auto-generated'  # Mark as auto-created
+                })
+
+            new_lineup_df = pd.DataFrame(new_lineup_entries)
+
+            # Add to lineups
+            if all_lineups is None or all_lineups.empty:
+                all_lineups = new_lineup_df
+            else:
+                all_lineups = pd.concat([all_lineups, new_lineup_df], ignore_index=True)
+
+            created_count += 1
+
+    # Save updated lineups if any were created
+    if created_count > 0:
+        data_loader.save_lineups(all_lineups)
+
+    return created_count
 
 
 def _log_lineup_transaction(manager_id: int, game_date: date, active_player_ids: List[int]) -> None:
