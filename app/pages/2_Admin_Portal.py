@@ -151,7 +151,10 @@ with tab1:
             st.success("Draft complete! Save results below.")
 
             if st.button("Save Draft Results"):
-                draft_df, rosters_df = draft_engine.execute_draft(st.session_state.draft_picks)
+                draft_df, rosters_df = draft_engine.execute_draft(
+                    st.session_state.draft_picks,
+                    st.session_state.draft_order
+                )
                 draft_engine.save_draft(draft_df, rosters_df)
 
                 # Delete temp file
