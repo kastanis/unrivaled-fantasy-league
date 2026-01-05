@@ -34,21 +34,23 @@ def create_snake_order(manager_ids: List[int], num_rounds: int = 9) -> List[Tupl
     return draft_order
 
 
-def execute_draft(draft_picks: List[Tuple[int, int]]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def execute_draft(draft_picks: List[Tuple[int, int]], draft_order: List[int] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Execute draft and create results.
 
     Args:
         draft_picks: List of (pick_number, player_id) tuples in order
+        draft_order: Optional list of manager IDs in draft order. If None, uses default from CSV.
 
     Returns:
         (draft_results_df, rosters_df)
     """
-    managers = data_loader.load_managers()
-    manager_ids = managers['manager_id'].tolist()
+    if draft_order is None:
+        managers = data_loader.load_managers()
+        draft_order = managers['manager_id'].tolist()
 
     # Generate snake order
-    snake_order = create_snake_order(manager_ids, num_rounds=DRAFT_ROUNDS)
+    snake_order = create_snake_order(draft_order, num_rounds=DRAFT_ROUNDS)
 
     # Build draft results
     draft_results = []
